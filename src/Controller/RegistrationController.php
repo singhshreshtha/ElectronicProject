@@ -13,6 +13,8 @@ use Symfony\Component\Mime\Address;
 use Symfony\Component\Routing\Annotation\Route;
 use Symfony\Component\Security\Core\Encoder\UserPasswordEncoderInterface;
 use SymfonyCasts\Bundle\VerifyEmail\Exception\VerifyEmailExceptionInterface;
+use Symfony\Component\Mailer\MailerInterface;
+use Symfony\Component\Mime\Email;
 
 class RegistrationController extends AbstractController
 {
@@ -26,7 +28,7 @@ class RegistrationController extends AbstractController
     /**
      * @Route("/register", name="app_register")
      */
-    public function register(Request $request, UserPasswordEncoderInterface $passwordEncoder): Response
+    public function register(Request $request, MailerInterface $mailer,UserPasswordEncoderInterface $passwordEncoder): Response
     {
         $user = new User();
         $form = $this->createForm(RegistrationFormType::class, $user);
@@ -37,9 +39,25 @@ class RegistrationController extends AbstractController
             $user->setPassword(
                 $passwordEncoder->encodePassword(
                     $user,
-                    $form->get('plainPassword')->getData()
+                    $form->get('Password')->getData()
                 )
             );
+
+            if($user->getManagerCheck())
+            {
+
+                $email = (new Email())
+                ->from('ronistar581@gmail.com')
+                //this email is site admin email
+                ->to('ujjwalkesari007@gmail.com')
+                //->cc('cc@example.com')
+            
+                ->subject('make user manager for the company')
+                ->text($user->getName().'wants to register as manager!');
+    
+            $mailer->send($email);
+    
+            }
 
             $entityManager = $this->getDoctrine()->getManager();
             $entityManager->persist($user);
