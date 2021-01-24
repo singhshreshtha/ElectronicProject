@@ -49,6 +49,21 @@ class User implements UserInterface
      */
     private $products;
 
+    /**
+     * @ORM\Column(type="string", length=100)
+     */
+    private $Name;
+
+    /**
+     * @ORM\Column(type="string", length=20)
+     */
+    private $phone;
+
+    /**
+     * @ORM\Column(type="boolean")
+     */
+    private $managerCheck;
+
     public function __construct()
     {
         $this->products = new ArrayCollection();
@@ -181,6 +196,42 @@ class User implements UserInterface
     public function getIsVerified(): ?bool
     {
         return $this->isVerified;
+    }
+
+    public function getName(): ?string
+    {
+        return $this->Name;
+    }
+
+    public function setName(string $Name): self
+    {
+        $this->Name = $Name;
+
+        return $this;
+    }
+
+    public function getPhone(): ?string
+    {
+        return $this->phone;
+    }
+
+    public function setPhone(string $phone): self
+    {
+        $this->phone = $phone;
+
+        return $this;
+    }
+
+    public function getManagerCheck(): ?bool
+    {
+        return $this->managerCheck;
+    }
+
+    public function setManagerCheck(bool $managerCheck): self
+    {
+        $this->managerCheck = $managerCheck;
+
+        return $this;
     }
 
 }

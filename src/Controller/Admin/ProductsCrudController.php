@@ -68,7 +68,7 @@ class ProductsCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        $image = ImageField::new('image')->setBasePath('/images/images');
+        $image = ImageField::new('image')->setBasePath('/images');
         $imageFile = VichImageField::new('imageFile');
         $fields = [
             //IdField::new('id'),
