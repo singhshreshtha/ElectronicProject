@@ -3,10 +3,13 @@
 namespace App\Entity;
 
 use App\Repository\ProductsRepository;
+use DateTime;
 use Doctrine\ORM\Mapping as ORM;
+use Vich\UploaderBundle\Mapping\Annotation as Vich;
 
 /**
  * @ORM\Entity(repositoryClass=ProductsRepository::class)
+ * @Vich\Uploadable()
  */
 class Products
 {
@@ -105,6 +108,31 @@ class Products
     private $image;
 
     /**
+     * @Vich\UploadableField(mapping="images", fileNameProperty="image")
+     */
+    private $imageFile;
+
+    /**
+     * @return mixed
+     */
+    public function getImageFile()
+    {
+        return $this->imageFile;
+    }
+
+    /**
+     * @param mixed $imageFile
+     */
+    public function setImageFile($imageFile): void
+    {
+        $this->imageFile = $imageFile;
+        if ($imageFile){
+          $this->updated_At = new DateTime();
+        }
+    }
+
+
+    /**
      * @ORM\Column(type="datetime")
      */
     private $created_At;
@@ -113,6 +141,11 @@ class Products
      * @ORM\Column(type="datetime")
      */
     private $updated_At;
+
+    public function __construct()
+    {
+        $this->updated_At = new DateTime();
+    }
 
     /**
      * @ORM\Column(type="float")

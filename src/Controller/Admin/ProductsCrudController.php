@@ -2,12 +2,14 @@
 
 namespace App\Controller\Admin;
 
+use App\Controller\Admin\Field\VichImageField;
 use App\Entity\Products;
 use App\Repository\CategoryRepository;
 use App\Repository\UserRepository;
-use App\Repository\ProductRepository;
+use App\Repository\ProductsRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
@@ -15,6 +17,9 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use phpDocumentor\Reflection\Types\Integer;
+use Vich\UploaderBundle\Form\Type\VichImageType;
+use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
+
 
 class ProductsCrudController extends AbstractCrudController
 {
@@ -34,7 +39,9 @@ class ProductsCrudController extends AbstractCrudController
 
     public function configureFields(string $pageName): iterable
     {
-        return [
+        $image = ImageField::new('image')->setBasePath('/images/images');
+        $imageFile = VichImageField::new('imageFile');
+        $fields = [
             //IdField::new('id'),
             AssociationField::new('manage'),
             AssociationField::new('category_type'),
@@ -68,12 +75,19 @@ class ProductsCrudController extends AbstractCrudController
                  'review' => 'review',
                  'publish' => 'publish',
                  ]),
-            TextField::new('image'), 
+
             DateTimeField::new('created_at')->hideOnForm()->hideOnIndex(), 
             DateTimeField::new('updated_at')->hideOnForm()->hideOnIndex(),
             NumberField::new('price'),
 
         ];
+
+        if ($pageName == Crud::PAGE_INDEX || $pageName == Crud::PAGE_DETAIL) {
+            $fields[] = $image;
+        } else {
+            $fields[] = $imageFile;
+        }
+        return $fields;
     }
 
     

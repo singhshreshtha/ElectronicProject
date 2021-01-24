@@ -43,8 +43,14 @@ class DashboardController extends AbstractDashboardController
             yield MenuItem::linkToCrud('Category', 'fas fa-sitemap', Category::class);
         }
         yield MenuItem::linkToCrud('Product', 'fas fa-dice-d6', Products::class);
-;
-   
 
+    }
+
+    /**
+     * @Route("/", name="start_page")
+     */
+    public function home(): Response
+    {
+        return $this->render('dashboard/index.html.twig', []);
     }
 }
