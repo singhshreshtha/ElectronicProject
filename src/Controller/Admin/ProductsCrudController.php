@@ -4,6 +4,7 @@ namespace App\Controller\Admin;
 
 use App\Controller\Admin\Field\VichImageField;
 use App\Entity\Products;
+use App\Form\ProductsType;
 use App\Repository\CategoryRepository;
 use App\Repository\UserRepository;
 use App\Repository\ProductsRepository;
@@ -11,18 +12,40 @@ use EasyCorp\Bundle\EasyAdminBundle\Config\Action;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Actions;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
-use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\AssociationField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\DateTimeField;
+use EasyCorp\Bundle\EasyAdminBundle\Router\AdminUrlGenerator;
+use Symfony\Component\HttpFoundation\JsonResponse;
+use Psr\Log\LoggerInterface;
+use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\Response;
+use Symfony\Component\String\Slugger\SluggerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use phpDocumentor\Reflection\Types\Integer;
 use Vich\UploaderBundle\Form\Type\VichImageType;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
-
+use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
+use Symfony\Component\HttpFoundation\HeaderUtils;
 
 class ProductsCrudController extends AbstractCrudController
 {
+
+    public function __construct(
+        AdminUrlGenerator $adminUrlGenerator, 
+        CategoryRepository $CategoryRepository, 
+        UserRepository $UserRepository, 
+        ProductsRepository $ProductsRepository, 
+        SluggerInterface $slugger,
+        LoggerInterface $logger
+    ) {
+        $this->adminUrlGenerator = $adminUrlGenerator;
+        $this->CategoryRepository = $CategoryRepository;
+        $this->UserRepository = $UserRepository;
+        $this->ProductsRepository = $ProductsRepository;
+        $this->slugger = $slugger;
+        $this->logger = $logger;
+    }
     public static function getEntityFqcn(): string
     {
         return Products::class;
@@ -30,7 +53,13 @@ class ProductsCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        $importPostButton = Action::new('importPost', 'Import')->setCssClass('btn btn-default')->createAsGlobalAction()->linkToCrudAction('importPost');
+        $exportPostButton = Action::new('exportPost', 'Export')->setCssClass('btn btn-default')->createAsGlobalAction()->linkToCrudAction('exportPost');
+        
+    
         return $actions
+            ->add(Crud::PAGE_INDEX, $importPostButton)
+             ->add(Crud::PAGE_INDEX, $exportPostButton)
              ->setPermission(Action::DELETE, 'ROLE_ADMIN')
              ->setPermission(Action::EDIT, 'ROLE_MANAGER')
              ->setPermission(Action::NEW, 'ROLE_ADMIN');
@@ -89,6 +118,99 @@ class ProductsCrudController extends AbstractCrudController
         }
         return $fields;
     }
+    public function importPost(Request $request)
+    {
+        $post = new Products();
+        $form = $this->createForm(ProductsType::class, $post);        
+        $form->handleRequest($request);
+
+        $importedFile = $form->get('import_file')->getData();
+        if ($form->isSubmitted() && $importedFile) {
+            $jsonData = file_get_contents($importedFile);
+            $entityManager = $this->getDoctrine()->getManager();
+           
+            try{
+                $postData = json_decode($jsonData);
+               
+                foreach ($postData as $postItem) {
+                    $newPost = new Products();
+                    $cat1= $this->UserRepository->find($postItem->manage);
+                    $cat= $this->CategoryRepository->find($postItem->category_type);
+                    $newPost->setProductName($postItem->product_name);
+                    $newPost->setDescription($postItem->description);
+                    $newPost->setCompanyName($postItem->company_name);
+                    $newPost->setColor($postItem->color);
+                    $newPost->setPowerConsumption($postItem->power_consumption);
+                    $newPost->setMaterialType($postItem->material_type);
+                    $newPost->setHeight($postItem->height);
+                    $newPost->setWidth($postItem->width);
+                    $newPost->setWeight($postItem->weight);
+                    $newPost->setCurrentType($postItem->current_type);
+                    $newPost->setWarranty($postItem->warranty);
+                    $newPost->setStarRatings($postItem->star_ratings);
+                    $newPost->setModelNo($postItem->model_no);
+                    $newPost->setStatus('new');
+                    $newPost->setImage($postItem->image);
+                    $newPost->setPrice($postItem->price);
+                    //$newPost->setCreatedAt($postItem->created_at);
+                    //$newPost->setUpdatedAt($postItem->updated_at);
+                    //$newPost->setManagedBy($postItem->managed_by);
+                   
+                    if(!empty($cat)){
+                        $newPost->setCategoryType($cat);
+                    }
+                    if(!empty($cat1)){
+                        $newPost->setManage($cat1);
+                    }
+                    $newPost->setCreatedAt(new \DateTime());
+                    $newPost->setUpdatedAt(new \DateTime());
+                    $newPost->setStatus('new');
+                    $entityManager->persist($newPost);
+                    $entityManager->flush();
+                }
+
+                $this->addFlash('success', 'Product(s) data has been imported successfully');
+                $this->logger->info('Data imported', $postData);
+            } catch (\Exception $e){
+                $this->addFlash('error', 'Unable to import data correctly.');
+                $this->logger->error('Unable to import data correctly.');
+            }
+        }else{
+            $this->logger->error('File was not uploaded');
+        }
+
+        return $this->render('admin/product/import.html.twig', [
+            'page_title' => 'Import Product',
+            'back_link' => $this->adminUrlGenerator->setController(ProductCrudController::class)->setAction(Action::INDEX)->generateUrl(),
+            'form' => $form->createView()
+        ]);
+    }
+
+    public function exportPost()
+    {
+        try{
+            $post = $this->ProductsRepository->findDownloadableData();
+            $filename = sprintf("%s_%s.json", 'EXPORT_FILE_POST',microtime(true));
+            if(empty($post)){
+                $this->addFlash('error', "There are no Products available in the list.");
+            }else{
+                $response = new Response(json_encode($post));
+                $disposition = HeaderUtils::makeDisposition(
+                    HeaderUtils::DISPOSITION_ATTACHMENT,
+                    $filename
+                );
+
+                $response->headers->set('Content-Disposition', $disposition);
+
+                return $response;
+            }
+        } catch (\Exception $e) {
+            $this->addFlash('error', "Something Wrong! Try to find the perfect exception. ");
+        }
+
+        return $this->redirect($this->adminUrlGenerator->setController(ProductsCrudController::class)->setAction(Action::INDEX)->generateUrl());
+    }
+    
 
     
 }
