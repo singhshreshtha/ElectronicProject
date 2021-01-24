@@ -39,7 +39,7 @@ class DashboardController extends AbstractDashboardController
        // yield MenuItem::linktoDashboard('Dashboard', 'fa fa-home');
         // yield MenuItem::linkToCrud('The Label', 'fas fa-list', EntityClass::class);
         yield MenuItem::linktoDashboard('User', 'fas fa-address-card')->setPermission('ROLE_ADMIN');
-        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_MANAGER')) {
+        if ($this->isGranted('ROLE_ADMIN')) {
             yield MenuItem::linkToCrud('Category', 'fas fa-sitemap', Category::class);
         }
 

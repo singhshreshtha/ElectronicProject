@@ -72,7 +72,7 @@ class ProductsCrudController extends AbstractCrudController
         $imageFile = VichImageField::new('imageFile');
         $fields = [
             //IdField::new('id'),
-            AssociationField::new('manage'),
+            AssociationField::new('manage')->setPermission('ROLE_ADMIN'),
             AssociationField::new('category_type'),
             TextField::new('product_name'), 
             TextField::new('description'), 
