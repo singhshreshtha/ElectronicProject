@@ -27,6 +27,7 @@ use Vich\UploaderBundle\Form\Type\VichImageType;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ImageField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\NumberField;
 use Symfony\Component\HttpFoundation\HeaderUtils;
+use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 
 class ProductsCrudController extends AbstractCrudController
 {
@@ -118,6 +119,16 @@ class ProductsCrudController extends AbstractCrudController
         }
         return $fields;
     }
+
+    public function configureFilters(Filters $filters): Filters
+    {
+        return $filters
+            ->add('product_name')
+            ->add('price')
+            ->add('category_type')
+            ;
+    }
+
     public function importPost(Request $request)
     {
         $post = new Products();

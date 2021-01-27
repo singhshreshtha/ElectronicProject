@@ -52,8 +52,8 @@ class RegistrationController extends AbstractController
                 ->to('ujjwalkesari007@gmail.com')
                 //->cc('cc@example.com')
             
-                ->subject('make user manager for the company')
-                ->text($user->getName().'wants to register as manager!');
+                ->subject(' make user manager for the company')
+                ->text($user->getName().' wants to register as manager!');
     
             $mailer->send($email);
     
