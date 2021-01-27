@@ -28,7 +28,9 @@
         class="navbar navbar-expand-lg navbar-light bg-light"
         style="height: 70px;"
 >
-    <a class="navbar-brand" href="#">Electronics</a>
+    <a class="navbar-brand" href="{{path('start_page')}}">Electronics</a> <a class="navbar-brand" href="{{path('admin')}}">
+                                        Home Page
+                                        </a>
     <div class="collapse navbar-collapse" id="navbarSupportedContent"></div>
     <ul class="nav navbar-nav navbar-right">
         {#        {% if app.user %}#}

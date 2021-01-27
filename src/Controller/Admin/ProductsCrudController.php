@@ -53,6 +53,7 @@ class ProductsCrudController extends AbstractCrudController
 
     public function configureActions(Actions $actions): Actions
     {
+        
         $importPostButton = Action::new('importPost', 'Import')->setCssClass('btn btn-default')->createAsGlobalAction()->linkToCrudAction('importPost');
         $exportPostButton = Action::new('exportPost', 'Export')->setCssClass('btn btn-default')->createAsGlobalAction()->linkToCrudAction('exportPost');
         
@@ -73,7 +74,7 @@ class ProductsCrudController extends AbstractCrudController
         $fields = [
             //IdField::new('id'),
             AssociationField::new('manage')->setPermission('ROLE_ADMIN'),
-            AssociationField::new('category_type'),
+            AssociationField::new('category_type')->setPermission('ROLE_MANAGER'),
             TextField::new('product_name'), 
             TextField::new('description'), 
             TextField::new('company_name'), 
