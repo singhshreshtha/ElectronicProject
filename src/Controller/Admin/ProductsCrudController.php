@@ -30,8 +30,9 @@ use Symfony\Component\HttpFoundation\HeaderUtils;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Filters;
 
 class ProductsCrudController extends AbstractCrudController
-{
 
+{
+   
     public function __construct(
         AdminUrlGenerator $adminUrlGenerator, 
         CategoryRepository $CategoryRepository, 
@@ -56,14 +57,29 @@ class ProductsCrudController extends AbstractCrudController
     {
         $importPostButton = Action::new('importPost', 'Import')->setCssClass('btn btn-default')->createAsGlobalAction()->linkToCrudAction('importPost');
         $exportPostButton = Action::new('exportPost', 'Export')->setCssClass('btn btn-default')->createAsGlobalAction()->linkToCrudAction('exportPost');
-        
+        if ($this->isGranted('ROLE_ADMIN')){
+            return $actions
+            ->add(Crud::PAGE_INDEX, $importPostButton)
+             ->add(Crud::PAGE_INDEX, $exportPostButton);
+
+
+        }
+        else if ($this->isGranted('ROLE_MANAGER')){
+            return $actions
+            
+             ->add(Crud::PAGE_INDEX, $exportPostButton);
+
+
+        }
+
+        else{
     
         return $actions
-            ->add(Crud::PAGE_INDEX, $importPostButton)
-             ->add(Crud::PAGE_INDEX, $exportPostButton)
+           
              ->setPermission(Action::DELETE, 'ROLE_ADMIN')
              ->setPermission(Action::EDIT, 'ROLE_MANAGER')
              ->setPermission(Action::NEW, 'ROLE_ADMIN');
+        }
     }
 
 
@@ -130,16 +146,17 @@ class ProductsCrudController extends AbstractCrudController
     }
 
     public function importPost(Request $request)
-    {
+    {   global $err_msg;
         $post = new Products();
         $form = $this->createForm(ProductsType::class, $post);        
         $form->handleRequest($request);
+
 
         $importedFile = $form->get('import_file')->getData();
         if ($form->isSubmitted() && $importedFile) {
             $jsonData = file_get_contents($importedFile);
             $entityManager = $this->getDoctrine()->getManager();
-           
+          ;
             try{
                 $postData = json_decode($jsonData);
                
@@ -147,7 +164,14 @@ class ProductsCrudController extends AbstractCrudController
                     $newPost = new Products();
                     $cat1= $this->UserRepository->find($postItem->manage);
                     $cat= $this->CategoryRepository->find($postItem->category_type);
-                    $newPost->setProductName($postItem->product_name);
+                    //$newPost->setProductName($postItem->product_name);
+                    if((empty($postItem->product_name)) || !(is_string($postItem->product_name)))
+                    {
+                        $err_msg= "product name has error ";
+                    }
+                    else{
+                        $newPost->setProductName($postItem->product_name);
+                    }
                     $newPost->setDescription($postItem->description);
                     $newPost->setCompanyName($postItem->company_name);
                     $newPost->setColor($postItem->color);
@@ -163,9 +187,7 @@ class ProductsCrudController extends AbstractCrudController
                     $newPost->setStatus('new');
                     $newPost->setImage($postItem->image);
                     $newPost->setPrice($postItem->price);
-                    //$newPost->setCreatedAt($postItem->created_at);
-                    //$newPost->setUpdatedAt($postItem->updated_at);
-                    //$newPost->setManagedBy($postItem->managed_by);
+                   
                    
                     if(!empty($cat)){
                         $newPost->setCategoryType($cat);
@@ -183,7 +205,7 @@ class ProductsCrudController extends AbstractCrudController
                 $this->addFlash('success', 'Product(s) data has been imported successfully');
                 $this->logger->info('Data imported', $postData);
             } catch (\Exception $e){
-                $this->addFlash('error', 'Unable to import data correctly.');
+                $this->addFlash('error', 'Unable to import '.$err_msg);
                 $this->logger->error('Unable to import data correctly.');
             }
         }else{

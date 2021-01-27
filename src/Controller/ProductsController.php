@@ -15,11 +15,12 @@ class ProductsController extends AbstractController
 /**
      * @Route("/products/", name="get_all_products", methods={"GET"})
      */
+    
     public function getAll(): JsonResponse
     {
         $products = $this->getDoctrine()->getRepository('App\Entity\Products')->findAll();
         $data = [];
-
+        if ($this->isGranted('ROLE_ADMIN') || $this->isGranted('ROLE_MANAGER')) {
         foreach ($products as $product) {
             $data[] = [
                 'id' => $product->getId(),
@@ -31,6 +32,12 @@ class ProductsController extends AbstractController
                 'imageUrl' => $product->getImage()
             ];
         }
+    }
+    else
+    {
+       echo "you are not authorized user, login first";
+
+    }
 
         return new JsonResponse($data, Response::HTTP_OK);
     }
